@@ -8,13 +8,14 @@ import { auth, database } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MapPin, TrendingUp, Package, Wind, Search, 
-  Clock, CheckCircle2, SlidersHorizontal, Filter, Camera
+  Clock, CheckCircle2, SlidersHorizontal, Filter, Camera, Navigation
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { calculateDistance } from '@/lib/utils';
 import Sidebar from '@/components/Sidebar';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import WasteDetectionModal from '@/components/WasteDetectionModal';
+import NGOCleanupPlanner from '@/components/NGOCleanupPlanner';
 import { WasteReport, FilterType, SortType, FirebaseUser } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
@@ -34,6 +35,8 @@ export default function DashboardPage() {
   const [sortType, setSortType] = useState<SortType>('distance');
   const [showFilters, setShowFilters] = useState(false);
   const [showDetectionModal, setShowDetectionModal] = useState(false);
+  const [showNGOPPlanner, setShowNGOPPlanner] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -55,7 +58,15 @@ export default function DashboardPage() {
         (position) => {
           setUserLocation([position.coords.latitude, position.coords.longitude]);
         },
-        (error) => console.log('Geolocation error:', error)
+        (error) => {
+          // Silently fail - use default location (India center)
+          // User can still use the map without their exact location
+          console.debug('Geolocation not available, using default location');
+        },
+        {
+          timeout: 5000,
+          enableHighAccuracy: false
+        }
       );
     }
   }, []);
@@ -357,7 +368,11 @@ export default function DashboardPage() {
                     </button>
                   </div>
                   <div className="h-[500px] rounded-lg overflow-hidden border border-border">
-                    <WasteMap reports={filteredReports} center={userLocation} showDrift={showDrift} />
+                    <WasteMap 
+                      reports={filteredReports} 
+                      center={mapCenter || userLocation} 
+                      showDrift={showDrift} 
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -446,6 +461,64 @@ export default function DashboardPage() {
               </Card>
             </div>
           </div>
+
+          {/* NGO Cleanup Planner Section */}
+          <AnimatePresence>
+            {showNGOPPlanner && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="p-0.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-zinc-700 dark:to-zinc-800 rounded-xl"
+              >
+                <Card className="border-0 shadow-sm">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Navigation className="h-5 w-5 text-primary" />
+                          NGO Cleanup Planner
+                        </CardTitle>
+                        <CardDescription>
+                          Calculate drift speeds and plan optimal cleanup locations based on wind conditions
+                        </CardDescription>
+                      </div>
+                      <button
+                        onClick={() => setShowNGOPPlanner(false)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-background text-muted-foreground border border-border hover:border-primary transition-all"
+                      >
+                        Hide Planner
+                      </button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-4">
+                    <NGOCleanupPlanner
+                      reports={filteredReports}
+                      onLocationSelect={(lat, lng) => {
+                        setMapCenter([lat, lng]);
+                        setShowDrift(true);
+                      }}
+                    />
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Show NGO Planner Button */}
+          {!showNGOPPlanner && (
+            <div className="flex justify-center">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowNGOPPlanner(true)}
+                className="px-6 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg font-semibold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg"
+              >
+                <Navigation className="w-5 h-5" />
+                Open NGO Cleanup Planner
+              </motion.button>
+            </div>
+          )}
         </div>
       </div>
 

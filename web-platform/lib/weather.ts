@@ -58,6 +58,63 @@ export async function getOceanCurrentData(lat: number, lng: number): Promise<Oce
   }
 }
 
+export interface DriftSpeed {
+  speed: number; // m/s
+  speedKmh: number; // km/h
+  direction: number; // degrees
+  windContribution: number; // m/s
+  currentContribution: number; // m/s
+}
+
+/**
+ * Calculate the drift speed and direction based on wind and ocean currents
+ */
+export function calculateDriftSpeed(
+  windSpeed: number,
+  windDirection: number,
+  currentVelocity: number,
+  currentDirection: number
+): DriftSpeed {
+  // Convert wind and current to velocity components
+  const windRadians = (windDirection * Math.PI) / 180;
+  const currentRadians = (currentDirection * Math.PI) / 180;
+  
+  // Wind factor (10% of wind speed affects surface drift)
+  const windFactor = 0.1;
+  const windVelocity = windSpeed * windFactor;
+  
+  // Calculate velocity components
+  const windVelocityX = windVelocity * Math.sin(windRadians);
+  const windVelocityY = windVelocity * Math.cos(windRadians);
+  const currentVelocityX = currentVelocity * Math.sin(currentRadians);
+  const currentVelocityY = currentVelocity * Math.cos(currentRadians);
+  
+  // Total velocity components
+  const totalVelocityX = windVelocityX + currentVelocityX;
+  const totalVelocityY = windVelocityY + currentVelocityY;
+  
+  // Calculate total drift speed (magnitude)
+  const totalSpeed = Math.sqrt(totalVelocityX * totalVelocityX + totalVelocityY * totalVelocityY);
+  
+  // Calculate drift direction (in degrees, 0-360)
+  let driftDirection = (Math.atan2(totalVelocityX, totalVelocityY) * 180) / Math.PI;
+  if (driftDirection < 0) {
+    driftDirection += 360;
+  }
+  
+  // Calculate contributions
+  const windContribution = windVelocity;
+  const currentContribution = currentVelocity;
+  
+  return {
+    speed: totalSpeed, // m/s
+    speedKmh: totalSpeed * 3.6, // km/h
+    direction: driftDirection,
+    windContribution,
+    currentContribution,
+  };
+}
+
 export function calculateDriftPosition(
   currentLat: number,
   currentLng: number,
@@ -96,4 +153,29 @@ export function calculateDriftPosition(
   const newLng = currentLng + (displacementX / metersPerDegreeLng);
   
   return { lat: newLat, lng: newLng };
+}
+
+/**
+ * Calculate predicted position with drift speed information
+ */
+export function calculateDriftWithSpeed(
+  currentLat: number,
+  currentLng: number,
+  windSpeed: number,
+  windDirection: number,
+  currentVelocity: number,
+  currentDirection: number,
+  hours: number = 24
+): { lat: number; lng: number; driftSpeed: DriftSpeed; distance: number } {
+  const driftSpeed = calculateDriftSpeed(windSpeed, windDirection, currentVelocity, currentDirection);
+  const position = calculateDriftPosition(currentLat, currentLng, windSpeed, windDirection, currentVelocity, currentDirection, hours);
+  
+  // Calculate distance traveled in meters
+  const distance = driftSpeed.speed * hours * 3600; // meters
+  
+  return {
+    ...position,
+    driftSpeed,
+    distance,
+  };
 }
