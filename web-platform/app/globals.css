@@ -84,6 +84,57 @@
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+  /* Prevent horizontal scroll on mobile */
+  overflow-x: hidden;
+}
+
+body {
+  /* Prevent horizontal scroll on mobile */
+  overflow-x: hidden;
+  /* Better touch scrolling on mobile */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 640px) {
+  /* Larger touch targets */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better text readability */
+  body {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  input, textarea, select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Better spacing on mobile */
+  .space-y-6 > * + * {
+    margin-top: 1rem;
+  }
+  
+  /* Prevent text overflow */
+  h1, h2, h3, h4, h5, h6 {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  /* Better card padding */
+  .card {
+    padding: 0.75rem;
+  }
+}
+
+/* Tablet improvements */
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Medium spacing */
+  .space-y-6 > * + * {
+    margin-top: 1.25rem;
+  }
 }
 
 /* Custom scrollbar */
@@ -136,6 +187,26 @@ html {
   font-family: inherit;
   border-radius: 0.5rem;
   background: var(--card);
+  /* Better touch interaction on mobile */
+  touch-action: pan-x pan-y;
+}
+
+/* Mobile map controls */
+@media (max-width: 640px) {
+  .leaflet-control-zoom {
+    margin: 10px !important;
+  }
+  
+  .leaflet-control-zoom a {
+    width: 30px !important;
+    height: 30px !important;
+    line-height: 30px !important;
+    font-size: 18px !important;
+  }
+  
+  .leaflet-popup-content-wrapper {
+    max-width: 250px !important;
+  }
 }
 
 .leaflet-popup-content-wrapper {

@@ -18,7 +18,20 @@ logger = logging.getLogger(__name__)
 
 # Instantiate Flask
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+# Enable CORS with specific settings for development and production
+CORS(app, 
+     resources={
+         r"/detect": {
+             "origins": ["http://localhost:3000", "http://127.0.0.1:3000", "*"],
+             "methods": ["POST", "OPTIONS"],
+             "allow_headers": ["Content-Type", "Authorization"]
+         },
+         r"/status": {
+             "origins": "*",
+             "methods": ["GET", "OPTIONS"]
+         }
+     },
+     supports_credentials=True)
 
 # Initialize Classifier
 try:

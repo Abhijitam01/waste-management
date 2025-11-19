@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { ref, onValue } from 'firebase/database';
@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [showDetectionModal, setShowDetectionModal] = useState(false);
   const [showNGOPPlanner, setShowNGOPPlanner] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
+  const plannerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -71,12 +72,46 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // Helper function to load reports from localStorage
+  const loadFromLocalStorage = (): WasteReport[] => {
+    try {
+      const localData = localStorage.getItem('waste_reports');
+      if (localData) {
+        const localReports = JSON.parse(localData);
+        return localReports.map((report: any) => ({
+          id: report.id || `local_${Date.now()}`,
+          lat: report.lat || 0,
+          lng: report.lng || 0,
+          type: report.type || 'unknown',
+          confidence: report.confidence || 0,
+          timestamp: report.timestamp || Date.now(),
+          imageUrl: report.imageUrl,
+          distance: calculateDistance(userLocation[0], userLocation[1], report.lat || 0, report.lng || 0),
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to load from localStorage:', err);
+    }
+    return [];
+  };
+
   useEffect(() => {
+    // Load from localStorage first (immediate display)
+    const localReports = loadFromLocalStorage();
+    if (localReports.length > 0) {
+      localReports.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+      setReports(localReports);
+    }
+
+    // Then try to load from Firebase
     const reportsRef = ref(database, 'waste_reports');
     const unsubscribe = onValue(reportsRef, (snapshot) => {
       const data = snapshot.val();
+      const allReports: WasteReport[] = [];
+      
+      // Add Firebase reports
       if (data) {
-        const reportsArray: WasteReport[] = Object.entries(data).map(([id, report]: [string, unknown]) => {
+        const firebaseReports: WasteReport[] = Object.entries(data).map(([id, report]: [string, unknown]) => {
           const reportData = report as Omit<WasteReport, 'id' | 'distance'>;
           return {
             id,
@@ -89,11 +124,28 @@ export default function DashboardPage() {
             distance: calculateDistance(userLocation[0], userLocation[1], reportData.lat || 0, reportData.lng || 0),
           };
         });
-        
-        reportsArray.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-        setReports(reportsArray);
-      } else {
-        setReports([]);
+        allReports.push(...firebaseReports);
+      }
+      
+      // Add localStorage reports (avoid duplicates)
+      const localReports = loadFromLocalStorage();
+      const firebaseIds = new Set(allReports.map(r => r.id));
+      const uniqueLocalReports = localReports.filter(r => !firebaseIds.has(r.id));
+      allReports.push(...uniqueLocalReports);
+      
+      // Remove duplicates and sort
+      const uniqueReports = Array.from(
+        new Map(allReports.map(r => [r.id, r])).values()
+      );
+      uniqueReports.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+      setReports(uniqueReports);
+    }, (error) => {
+      // If Firebase fails, just use localStorage
+      console.warn('Firebase read failed, using localStorage only:', error);
+      const localReports = loadFromLocalStorage();
+      if (localReports.length > 0) {
+        localReports.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+        setReports(localReports);
       }
     });
 
@@ -191,12 +243,12 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background flex">
       <Sidebar userEmail={user?.email || undefined} onLogout={handleLogout} />
 
-      <div className="flex-1 lg:ml-72">
+      <div className="flex-1 lg:ml-72 transition-all duration-300">
         <div className="space-y-6 min-h-screen py-4 px-2 md:px-10">
           {/* Header with Breadcrumb */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-bold text-2xl text-foreground">Dashboard</h1>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+            <div className="flex-1 min-w-0">
+              <h1 className="font-bold text-xl sm:text-2xl text-foreground">Dashboard</h1>
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem className="hidden md:block">
@@ -213,10 +265,11 @@ export default function DashboardPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowDetectionModal(true)}
-              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg"
+              className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-primary text-primary-foreground rounded-lg font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg text-sm sm:text-base"
             >
-              <Camera className="w-5 h-5" />
-              Detect Waste Now
+              <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden xs:inline">Detect Waste Now</span>
+              <span className="xs:hidden">Detect</span>
             </motion.button>
           </div>
 
@@ -234,21 +287,21 @@ export default function DashboardPage() {
                   <CardDescription>Key statistics and metrics</CardDescription>
                 </CardHeader>
                 <CardContent className="pb-4">
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     {stats.map((stat, index) => (
                       <Card
                         key={index}
-                        className={`border-none hover:shadow-xl transition-all duration-300 py-3 bg-gradient-to-br ${stat.gradient}`}
+                        className={`border-none hover:shadow-xl transition-all duration-300 py-2 sm:py-3 bg-gradient-to-br ${stat.gradient}`}
                       >
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
-                          <div className={`h-10 w-10 flex items-center justify-center rounded-full bg-gradient-to-br ${stat.iconGradient} text-white`}>
-                            <stat.icon className="h-5 w-5" />
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6">
+                          <CardTitle className="text-xs sm:text-sm font-medium truncate pr-1">{stat.label}</CardTitle>
+                          <div className={`h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center rounded-full bg-gradient-to-br ${stat.iconGradient} text-white flex-shrink-0`}>
+                            <stat.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                           </div>
                         </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold">{stat.value}</div>
-                          <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
+                        <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+                          <div className="text-xl sm:text-2xl font-bold">{stat.value}</div>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 line-clamp-1">{stat.change}</p>
                         </CardContent>
                       </Card>
                     ))}
@@ -259,29 +312,29 @@ export default function DashboardPage() {
           </div>
 
           {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search reports..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-foreground text-sm placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 bg-background border border-input rounded-lg text-foreground text-sm placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
               />
             </div>
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
                 showFilters || filterType !== 'all' || sortType !== 'distance'
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-card text-card-foreground border border-border hover:border-primary'
               }`}
             >
-              <SlidersHorizontal className="w-4 h-4" />
-              Filters
+              <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>Filters</span>
             </motion.button>
           </div>
 
@@ -292,16 +345,16 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="bg-card border border-border rounded-lg p-5 space-y-4"
+                className="bg-card border border-border rounded-lg p-3 sm:p-4 lg:p-5 space-y-3 sm:space-y-4"
               >
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-3">Filter by Type</p>
-                  <div className="flex flex-wrap gap-2">
+                  <p className="text-xs font-medium text-muted-foreground mb-2 sm:mb-3">Filter by Type</p>
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {(['all', 'plastic', 'glass', 'metal', 'paper', 'cardboard', 'trash'] as FilterType[]).map((type) => (
                       <button
                         key={type}
                         onClick={() => setFilterType(type)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
+                        className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
                           filterType === type
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-background text-muted-foreground border border-border hover:border-primary'
@@ -313,8 +366,8 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-3">Sort by</p>
-                  <div className="flex flex-wrap gap-2">
+                  <p className="text-xs font-medium text-muted-foreground mb-2 sm:mb-3">Sort by</p>
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {([
                       { value: 'distance', label: 'Distance' },
                       { value: 'confidence', label: 'Confidence' },
@@ -323,7 +376,7 @@ export default function DashboardPage() {
                       <button
                         key={sort.value}
                         onClick={() => setSortType(sort.value)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                           sortType === sort.value
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-background text-muted-foreground border border-border hover:border-primary'
@@ -339,35 +392,37 @@ export default function DashboardPage() {
           </AnimatePresence>
 
           {/* Main Content Grid */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
             {/* Map Section */}
-            <div className="p-0.5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-zinc-700 dark:to-zinc-800 rounded-xl">
+            <div className="p-0.5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-zinc-700 dark:to-zinc-800 rounded-xl order-2 lg:order-1">
               <Card className="border-0 shadow-sm h-full">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-primary" />
-                    Waste Locations
-                  </CardTitle>
-                  <CardDescription>
-                    {filteredReports.length} {filteredReports.length === 1 ? 'location' : 'locations'} on map
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pb-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex-1" />
+                <CardHeader className="pb-2 px-3 sm:px-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                        <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                        <span className="truncate">Waste Locations</span>
+                      </CardTitle>
+                      <CardDescription className="text-xs sm:text-sm">
+                        {filteredReports.length} {filteredReports.length === 1 ? 'location' : 'locations'} on map
+                      </CardDescription>
+                    </div>
                     <button
                       onClick={() => setShowDrift(!showDrift)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${
+                      className={`ml-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${
                         showDrift
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-background text-muted-foreground border border-border hover:border-primary'
                       }`}
                     >
                       <Wind className="w-3.5 h-3.5" />
-                      {showDrift ? 'Hide' : 'Show'} Drift
+                      <span className="hidden sm:inline">{showDrift ? 'Hide' : 'Show'} Drift</span>
+                      <span className="sm:hidden">{showDrift ? 'Hide' : 'Show'}</span>
                     </button>
                   </div>
-                  <div className="h-[500px] rounded-lg overflow-hidden border border-border">
+                </CardHeader>
+                <CardContent className="pb-4 px-3 sm:px-6">
+                  <div className="h-[300px] sm:h-[400px] lg:h-[500px] rounded-lg overflow-hidden border border-border">
                     <WasteMap 
                       reports={filteredReports} 
                       center={mapCenter || userLocation} 
@@ -379,17 +434,17 @@ export default function DashboardPage() {
             </div>
 
             {/* Reports List */}
-            <div className="p-0.5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-zinc-700 dark:to-zinc-800 rounded-xl">
+            <div className="p-0.5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-zinc-700 dark:to-zinc-800 rounded-xl order-1 lg:order-2">
               <Card className="border-0 shadow-sm h-full">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Package className="h-5 w-5 text-primary" />
+                <CardHeader className="pb-2 px-3 sm:px-6">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     Recent Reports
                   </CardTitle>
-                  <CardDescription>Sorted by {sortType}</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm">Sorted by {sortType}</CardDescription>
                 </CardHeader>
-                <CardContent className="pb-4">
-                  <div className="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar">
+                <CardContent className="pb-4 px-3 sm:px-6">
+                  <div className="space-y-2 max-h-[300px] sm:max-h-[400px] lg:max-h-[500px] overflow-y-auto custom-scrollbar">
                     {filteredReports.length === 0 ? (
                       <div className="p-8 text-center">
                         <Package className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
@@ -403,13 +458,17 @@ export default function DashboardPage() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.03 }}
-                          className="group bg-muted border border-border rounded-lg p-4 hover:border-primary transition-all cursor-pointer"
+                          onClick={() => {
+                            setMapCenter([report.lat, report.lng]);
+                            setShowDrift(false); // Reset drift when clicking a report
+                          }}
+                          className="group bg-muted border border-border rounded-lg p-3 sm:p-4 hover:border-primary transition-all cursor-pointer active:scale-[0.98]"
                         >
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="font-semibold text-card-foreground text-sm capitalize">{report.type}</h3>
-                                <span className="px-2 py-0.5 rounded text-xs font-medium border border-border bg-background text-muted-foreground">
+                          <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 flex-wrap">
+                                <h3 className="font-semibold text-card-foreground text-xs sm:text-sm capitalize truncate">{report.type}</h3>
+                                <span className="px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-medium border border-border bg-background text-muted-foreground flex-shrink-0">
                                   {report.type}
                                 </span>
                               </div>
@@ -418,31 +477,31 @@ export default function DashboardPage() {
                                   <img
                                     src={report.imageUrl}
                                     alt={report.type}
-                                    className="w-full h-20 object-cover"
+                                    className="w-full h-16 sm:h-20 object-cover"
                                   />
                                 </div>
                               )}
                             </div>
-                            <span className="text-xs font-medium text-muted-foreground bg-background px-2 py-1 rounded border border-border">
+                            <span className="text-[10px] sm:text-xs font-medium text-muted-foreground bg-background px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-border flex-shrink-0">
                               {report.distance ? `${report.distance.toFixed(1)} km` : 'N/A'}
                             </span>
                           </div>
                           
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                            <MapPin className="w-3 h-3" />
-                            <span>{report.lat.toFixed(3)}, {report.lng.toFixed(3)}</span>
+                          <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground mb-1.5 sm:mb-2">
+                            <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                            <span className="truncate">{report.lat.toFixed(3)}, {report.lng.toFixed(3)}</span>
                           </div>
                           
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Clock className="w-3 h-3" />
-                              {getTimeAgo(report.timestamp)}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
+                              <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                              <span>{getTimeAgo(report.timestamp)}</span>
                             </div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
                               {report.confidence > 0.8 && (
-                                <CheckCircle2 className="w-3 h-3 text-primary" />
+                                <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
                               )}
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded border ${
+                              <span className={`text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded border ${
                                 report.confidence > 0.8
                                   ? 'bg-primary text-primary-foreground border-primary'
                                   : report.confidence > 0.6
@@ -466,6 +525,7 @@ export default function DashboardPage() {
           <AnimatePresence>
             {showNGOPPlanner && (
               <motion.div
+                ref={plannerRef}
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
@@ -493,7 +553,7 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent className="pb-4">
                     <NGOCleanupPlanner
-                      reports={filteredReports}
+                      reports={reports}
                       onLocationSelect={(lat, lng) => {
                         setMapCenter([lat, lng]);
                         setShowDrift(true);
@@ -507,16 +567,81 @@ export default function DashboardPage() {
 
           {/* Show NGO Planner Button */}
           {!showNGOPPlanner && (
-            <div className="flex justify-center">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowNGOPPlanner(true)}
-                className="px-6 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg font-semibold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg"
-              >
-                <Navigation className="w-5 h-5" />
-                Open NGO Cleanup Planner
-              </motion.button>
+            <div className="space-y-4">
+              <div className="p-0.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-zinc-700 dark:to-zinc-800 rounded-xl">
+                <Card className="border-0 shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Navigation className="h-5 w-5 text-primary" />
+                      For NGOs: Cleanup Planning Tools
+                    </CardTitle>
+                    <CardDescription>
+                      View all waste reports with drift analysis to plan efficient cleanup operations
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pb-4">
+                    <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+                      <div className="p-3 sm:p-4 bg-muted/50 rounded-lg border border-border">
+                        <h3 className="font-semibold text-sm sm:text-base text-card-foreground mb-1.5 sm:mb-2 flex items-center gap-1.5 sm:gap-2">
+                          <Wind className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
+                          <span>Drift Analysis</span>
+                        </h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
+                          See how waste moves based on wind and ocean currents. Click "Show Drift" on the map above.
+                        </p>
+                        <button
+                          onClick={() => setShowDrift(!showDrift)}
+                          className={`w-full px-2.5 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
+                            showDrift
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-background text-muted-foreground border border-border hover:border-primary'
+                          }`}
+                        >
+                          <Wind className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <span className="hidden sm:inline">{showDrift ? 'Hide' : 'Show'} Drift Analysis</span>
+                          <span className="sm:hidden">{showDrift ? 'Hide' : 'Show'} Drift</span>
+                        </button>
+                      </div>
+                      <div className="p-3 sm:p-4 bg-muted/50 rounded-lg border border-border">
+                        <h3 className="font-semibold text-sm sm:text-base text-card-foreground mb-1.5 sm:mb-2 flex items-center gap-1.5 sm:gap-2">
+                          <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
+                          <span>Cleanup Planner</span>
+                        </h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
+                          Get prioritized cleanup recommendations with drift speeds and predicted locations.
+                        </p>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => {
+                            setShowNGOPPlanner(true);
+                            // Smooth scroll to planner after it opens
+                            setTimeout(() => {
+                              plannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }, 300);
+                          }}
+                          className="w-full px-2.5 sm:px-3 py-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg font-semibold flex items-center justify-center gap-1.5 sm:gap-2 hover:opacity-90 transition-all text-xs sm:text-sm"
+                        >
+                          <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <span className="hidden sm:inline">Open Cleanup Planner</span>
+                          <span className="sm:hidden">Open Planner</span>
+                        </motion.button>
+                      </div>
+                    </div>
+                    <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-primary/10 border border-primary/30 rounded-lg">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
+                        <strong className="text-card-foreground">Total Reports:</strong> {reports.length} locations
+                        {reports.length > 0 && (
+                          <span className="block sm:inline sm:ml-2 mt-1 sm:mt-0">
+                            • {reports.filter(r => r.confidence > 0.8).length} high confidence
+                            • {reports.filter(r => (r.distance || 0) < 50).length} within 50km
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
         </div>

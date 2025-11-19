@@ -26,30 +26,30 @@ export default function Home() {
               <span className="text-sm font-medium">Powered by AI & Community</span>
             </motion.div>
 
-            <h1 className="text-6xl md:text-8xl font-bold mb-6 text-foreground">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold mb-4 sm:mb-6 text-foreground">
               OceanCleanup
               <br />
               Connect
             </h1>
 
-            <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed px-4">
               Empowering NGOs to identify, track, and coordinate ocean waste cleanup operations with AI-powered detection and real-time drift analysis.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
               <motion.button
                 onClick={() => setIsModalOpen(true)}
-                className="group px-8 py-4 bg-primary rounded-lg font-semibold text-primary-foreground flex items-center gap-2 hover:opacity-90 transition-all"
+                className="group px-6 sm:px-8 py-3 sm:py-4 bg-primary rounded-lg font-semibold text-primary-foreground flex items-center justify-center gap-2 hover:opacity-90 transition-all text-sm sm:text-base"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Camera className="w-5 h-5" />
+                <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
                 Detect Waste Now
               </motion.button>
 
-              <Link href="/dashboard">
+              <Link href="/dashboard" className="w-full sm:w-auto">
                 <motion.button
-                  className="px-8 py-4 bg-background border-2 border-primary rounded-lg font-semibold text-foreground hover:bg-accent transition-all"
+                  className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-background border-2 border-primary rounded-lg font-semibold text-foreground hover:bg-accent transition-all text-sm sm:text-base"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -57,9 +57,9 @@ export default function Home() {
                 </motion.button>
               </Link>
 
-              <Link href="/report">
+              <Link href="/report" className="w-full sm:w-auto">
                 <motion.button
-                  className="px-8 py-4 bg-background border-2 border-primary rounded-lg font-semibold text-foreground hover:bg-accent transition-all"
+                  className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-background border-2 border-primary rounded-lg font-semibold text-foreground hover:bg-accent transition-all text-sm sm:text-base"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >

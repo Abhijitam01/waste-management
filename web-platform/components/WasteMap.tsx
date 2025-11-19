@@ -102,6 +102,10 @@ export default function WasteMap({ reports, center = [20.5937, 78.9629], showDri
                   src={report.imageUrl}
                   alt={report.type}
                   className="mt-2 rounded w-full h-32 object-cover"
+                  onError={(e) => {
+                    // Hide image if it fails to load (404, CORS, etc.)
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
               )}
             </div>

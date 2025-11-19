@@ -140,34 +140,34 @@ export default function NGOCleanupPlanner({ reports, onLocationSelect }: NGOClea
 
   if (loading) {
     return (
-      <div className="p-8 text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <p className="mt-4 text-sm text-muted-foreground">Calculating drift speeds and cleanup recommendations...</p>
+      <div className="p-4 sm:p-8 text-center">
+        <div className="inline-block animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-2 border-primary"></div>
+        <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-muted-foreground">Calculating drift speeds and cleanup recommendations...</p>
       </div>
     );
   }
 
   if (recommendations.length === 0) {
     return (
-      <div className="p-8 text-center">
-        <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-        <p className="text-sm text-muted-foreground">No drift data available. Enable drift analysis to see recommendations.</p>
+      <div className="p-4 sm:p-8 text-center">
+        <AlertCircle className="w-8 h-8 sm:w-12 sm:h-12 text-muted-foreground mx-auto mb-3 sm:mb-4" />
+        <p className="text-xs sm:text-sm text-muted-foreground">No drift data available. Enable drift analysis to see recommendations.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col gap-3">
         <div className="flex-1">
-          <label className="block text-xs font-medium text-muted-foreground mb-2">Timeframe</label>
-          <div className="flex gap-2">
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5 sm:mb-2">Timeframe</label>
+          <div className="flex gap-1.5 sm:gap-2">
             {[24, 48, 72].map((hours) => (
               <button
                 key={hours}
                 onClick={() => setSelectedTimeframe(hours as 24 | 48 | 72)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`flex-1 px-2 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all ${
                   selectedTimeframe === hours
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-background text-muted-foreground border border-border hover:border-primary'
@@ -179,8 +179,8 @@ export default function NGOCleanupPlanner({ reports, onLocationSelect }: NGOClea
           </div>
         </div>
         <div className="flex-1">
-          <label className="block text-xs font-medium text-muted-foreground mb-2">Sort By</label>
-          <div className="flex gap-2">
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5 sm:mb-2">Sort By</label>
+          <div className="flex gap-1.5 sm:gap-2">
             {[
               { value: 'urgency', label: 'Urgency' },
               { value: 'speed', label: 'Speed' },
@@ -189,7 +189,7 @@ export default function NGOCleanupPlanner({ reports, onLocationSelect }: NGOClea
               <button
                 key={sort.value}
                 onClick={() => setSortBy(sort.value as 'speed' | 'distance' | 'urgency')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`flex-1 px-2 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all ${
                   sortBy === sort.value
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-background text-muted-foreground border border-border hover:border-primary'
@@ -203,7 +203,7 @@ export default function NGOCleanupPlanner({ reports, onLocationSelect }: NGOClea
       </div>
 
       {/* Recommendations List */}
-      <div className="space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar">
+      <div className="space-y-2 sm:space-y-3 max-h-[400px] sm:max-h-[500px] lg:max-h-[600px] overflow-y-auto custom-scrollbar">
         {recommendations.map((rec, index) => {
           const predicted = selectedTimeframe === 24 ? rec.predicted24h : 
                            selectedTimeframe === 48 ? rec.predicted48h :
@@ -215,7 +215,7 @@ export default function NGOCleanupPlanner({ reports, onLocationSelect }: NGOClea
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className={`border rounded-lg p-4 hover:shadow-lg transition-all cursor-pointer ${
+              className={`border rounded-lg p-3 sm:p-4 hover:shadow-lg transition-all cursor-pointer active:scale-[0.98] ${
                 rec.priority === 'high' ? 'border-red-500/50 bg-red-50/50 dark:bg-red-950/20' :
                 rec.priority === 'medium' ? 'border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-950/20' :
                 'border-border bg-card'
@@ -226,38 +226,38 @@ export default function NGOCleanupPlanner({ reports, onLocationSelect }: NGOClea
                 }
               }}
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold text-card-foreground capitalize">{rec.report.type}</h3>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium border ${getPriorityColor(rec.priority)}`}>
+              <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 flex-wrap">
+                    <h3 className="font-semibold text-sm sm:text-base text-card-foreground capitalize truncate">{rec.report.type}</h3>
+                    <span className={`px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-medium border ${getPriorityColor(rec.priority)} flex-shrink-0`}>
                       {rec.priority.toUpperCase()} PRIORITY
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div className="bg-muted/50 rounded-lg p-2">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Wind className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-xs font-medium text-muted-foreground">Drift Speed</span>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <div className="bg-muted/50 rounded-lg p-1.5 sm:p-2">
+                      <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5 sm:mb-1">
+                        <Wind className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary flex-shrink-0" />
+                        <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">Drift Speed</span>
                       </div>
-                      <div className="text-lg font-bold text-card-foreground">
-                        {rec.driftSpeed.speedKmh.toFixed(2)} <span className="text-xs text-muted-foreground">km/h</span>
+                      <div className="text-base sm:text-lg font-bold text-card-foreground">
+                        {rec.driftSpeed.speedKmh.toFixed(2)} <span className="text-[10px] sm:text-xs text-muted-foreground">km/h</span>
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-[10px] sm:text-xs text-muted-foreground">
                         Direction: {rec.driftSpeed.direction.toFixed(1)}°
                       </div>
                     </div>
 
-                    <div className="bg-muted/50 rounded-lg p-2">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <TrendingUp className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-xs font-medium text-muted-foreground">Urgency Score</span>
+                    <div className="bg-muted/50 rounded-lg p-1.5 sm:p-2">
+                      <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5 sm:mb-1">
+                        <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary flex-shrink-0" />
+                        <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">Urgency Score</span>
                       </div>
-                      <div className={`text-lg font-bold ${getUrgencyColor(rec.urgency)}`}>
+                      <div className={`text-base sm:text-lg font-bold ${getUrgencyColor(rec.urgency)}`}>
                         {rec.urgency.toFixed(0)}/100
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">
                         {rec.priority === 'high' ? 'Immediate action needed' :
                          rec.priority === 'medium' ? 'Plan within 48h' :
                          'Monitor and plan'}
@@ -265,7 +265,7 @@ export default function NGOCleanupPlanner({ reports, onLocationSelect }: NGOClea
                     </div>
                   </div>
 
-                  <div className="space-y-2 text-xs">
+                  <div className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-xs">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <MapPin className="w-3 h-3" />
                       <span>Current: {rec.report.lat.toFixed(4)}, {rec.report.lng.toFixed(4)}</span>
@@ -299,9 +299,9 @@ export default function NGOCleanupPlanner({ reports, onLocationSelect }: NGOClea
                 </div>
               </div>
 
-              <div className="mt-3 pt-3 border-t border-border">
-                <div className="flex items-center gap-2 text-xs">
-                  <AlertCircle className="w-3.5 h-3.5 text-primary" />
+              <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-border">
+                <div className="flex items-start gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
+                  <AlertCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary flex-shrink-0 mt-0.5" />
                   <span className="text-muted-foreground">
                     <strong className="text-card-foreground">NGO Recommendation:</strong> Plan cleanup at predicted location 
                     ({selectedTimeframe}h) to intercept waste. Waste is moving at {rec.driftSpeed.speedKmh.toFixed(1)} km/h.
