@@ -278,6 +278,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Leaflet** for map functionality
 - **Open-Meteo** for weather data
 
+## 📚 Documentation
+
+All project documentation is available in the [`doc/`](doc/) folder:
+
+- **[FIREBASE_AUTH_FIX.md](doc/FIREBASE_AUTH_FIX.md)** - Firebase authentication setup and troubleshooting
+- **[QUICKSTART.md](doc/QUICKSTART.md)** - Quick start guide for developers
+- **[PROJECT_REPORT_CONTEXT.md](doc/PROJECT_REPORT_CONTEXT.md)** - Project context and architecture
+- **[UI_FIXES_SUMMARY.md](doc/UI_FIXES_SUMMARY.md)** - UI improvements documentation
+- **[CODE_CLEANUP_SUMMARY.md](doc/CODE_CLEANUP_SUMMARY.md)** - Code cleanup documentation
+- **[CREATE_DEMO_USER.md](doc/CREATE_DEMO_USER.md)** - Guide for creating demo users
+- **[DEMO_CREDENTIALS.md](doc/DEMO_CREDENTIALS.md)** - Demo account information
+- **[DRIFT_ANALYSIS.md](doc/DRIFT_ANALYSIS.md)** - Drift analysis feature documentation
+
 ## 📞 Support
 
 For support, email support@oceancleanup.connect or open an issue in the repository.
