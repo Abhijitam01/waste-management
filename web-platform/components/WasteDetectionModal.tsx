@@ -262,31 +262,6 @@ export default function WasteDetectionModal({ isOpen, onClose, onSuccess }: Wast
                   </div>
 
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Detection Results - Show while processing or after detection */}
-                    {showResults && result && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="p-4 bg-muted border border-border rounded-lg"
-                      >
-                        <h3 className="text-sm font-semibold text-card-foreground mb-3">AI Classification Results:</h3>
-                        <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
-                          {Object.entries(result)
-                            .sort(([, a], [, b]) => b - a)
-                            .map(([type, confidence], index) => (
-                              <div
-                                key={type}
-                                className="flex items-center justify-between p-2 bg-background rounded border border-border"
-                              >
-                                <span className="text-card-foreground capitalize font-medium text-sm">{type}</span>
-                                <span className="text-card-foreground font-semibold text-sm">
-                                  (score = {confidence.toFixed(5)})
-                                </span>
-                              </div>
-                            ))}
-                        </div>
-                      </motion.div>
-                    )}
                     {/* Image Upload */}
                     <div>
                       <label className="block text-sm font-medium text-card-foreground mb-3">
@@ -314,6 +289,31 @@ export default function WasteDetectionModal({ isOpen, onClose, onSuccess }: Wast
                               alt="Preview"
                               className="w-full h-64 object-cover rounded-lg border border-border"
                             />
+                            
+                            {/* Detection Results Overlay - Similar to image reference */}
+                            {showResults && result && (
+                              <motion.div
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="absolute top-2 right-2 bg-background/95 dark:bg-card/95 backdrop-blur-sm border border-border rounded-lg p-3 max-w-xs shadow-lg"
+                              >
+                                <h4 className="text-xs font-semibold text-card-foreground mb-2">Detection Results:</h4>
+                                <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
+                                  {Object.entries(result)
+                                    .sort(([, a], [, b]) => b - a)
+                                    .map(([type, confidence]) => (
+                                      <div
+                                        key={type}
+                                        className="text-xs font-mono text-card-foreground"
+                                      >
+                                        <span className="capitalize">{type}</span>
+                                        <span className="text-muted-foreground"> (score = {confidence.toFixed(5)})</span>
+                                      </div>
+                                    ))}
+                                </div>
+                              </motion.div>
+                            )}
+                            
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-3">
                               <button
                                 type="button"
@@ -327,6 +327,8 @@ export default function WasteDetectionModal({ isOpen, onClose, onSuccess }: Wast
                                 onClick={() => {
                                   setImage(null);
                                   setPreview('');
+                                  setShowResults(false);
+                                  setResult(null);
                                 }}
                                 className="px-4 py-2 bg-background text-foreground rounded-lg hover:bg-accent transition-colors flex items-center gap-2"
                               >
