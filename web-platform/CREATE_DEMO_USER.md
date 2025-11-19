@@ -23,9 +23,9 @@ Since Firebase Authentication requires actual signup through the app, here's how
 4. **Sign up**:
    - Click "Don't have an account? Sign up"
    - Enter:
-     - **NGO Name**: `Ocean Warriors Demo`
-     - **Email**: `demo@oceancleanup.com`
-     - **Password**: `Demo123!`
+     - **NGO Name**: `Your Organization Name`
+     - **Email**: `your-email@example.com` (Use your own email)
+     - **Password**: `YourSecurePassword123!` (Use a strong password)
    - Click "Create Account"
 
 5. **Done!** You can now use these credentials to login
@@ -33,19 +33,21 @@ Since Firebase Authentication requires actual signup through the app, here's how
 ## Method 2: Using Firebase Console (Alternative)
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Select your project: `plastic-detection-16524`
+2. Select your project
 3. Go to Authentication → Users
 4. Click "Add User"
 5. Enter:
-   - Email: `demo@oceancleanup.com`
-   - Password: `Demo123!`
+   - Email: `your-email@example.com` (Use your own email)
+   - Password: `YourSecurePassword123!` (Use a strong password)
 6. Click "Add User"
 
-## Demo Credentials
+## Example Credentials (For Testing Only)
+
+⚠️ **Never use these in production!**
 
 ```
-Email: demo@oceancleanup.com
-Password: Demo123!
+Email: demo@oceancleanup.com (Example only)
+Password: Demo123! (Example only - change this!)
 ```
 
 ## Testing the Account

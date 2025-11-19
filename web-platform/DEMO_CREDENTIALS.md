@@ -1,9 +1,12 @@
 # Demo Login Credentials
 
-## Test Account
+⚠️ **IMPORTANT**: These are example credentials for documentation purposes only.  
+**Never use these in production!** Always create your own secure credentials.
+
+## Test Account (Example)
 
 **Email:** `demo@oceancleanup.com`  
-**Password:** `Demo123!`
+**Password:** `Demo123!` (Example password - change this!)
 
 ## How to Create This Account
 

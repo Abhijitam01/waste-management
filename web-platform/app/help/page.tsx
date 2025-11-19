@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Upload, MapPin, Wind, BarChart3, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -112,12 +113,18 @@ export default function HelpPage() {
               If you have questions or need assistance, please contact our support team or check the FAQ section.
             </p>
             <div className="flex gap-3">
-              <button className="px-4 py-2 bg-background text-foreground rounded-lg hover:bg-accent transition-colors">
+              <a 
+                href="mailto:support@oceancleanup.com" 
+                className="px-4 py-2 bg-background text-foreground rounded-lg hover:bg-accent transition-colors inline-block"
+              >
                 Contact Support
-              </button>
-              <button className="px-4 py-2 bg-background/20 text-primary-foreground rounded-lg hover:bg-background/30 transition-colors">
-                View FAQ
-              </button>
+              </a>
+              <Link 
+                href="/dashboard"
+                className="px-4 py-2 bg-background/20 text-primary-foreground rounded-lg hover:bg-background/30 transition-colors inline-block"
+              >
+                View Dashboard
+              </Link>
             </div>
           </motion.div>
         </motion.div>

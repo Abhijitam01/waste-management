@@ -8,7 +8,7 @@ This error means Email/Password authentication is not enabled in your Firebase p
 
 ### Step 1: Go to Firebase Console
 1. Open [Firebase Console](https://console.firebase.google.com/)
-2. Select your project: **plastic-detection-16524**
+2. Select your project
 
 ### Step 2: Enable Authentication
 1. In the left sidebar, click **"Build"** → **"Authentication"**
@@ -58,7 +58,7 @@ firebase init
 ### Still getting errors?
 
 1. **Check API Key**: Verify your API key in `.env.local` is correct
-2. **Check Project ID**: Ensure `plastic-detection-16524` is the correct project
+2. **Check Project ID**: Ensure your project ID matches your Firebase project
 3. **Clear Browser Cache**: Sometimes cached data causes issues
 4. **Check Firebase Quotas**: Free tier has limits (10k verifications/month)
 
@@ -76,17 +76,17 @@ firebase init
 
 ## Current Configuration
 
-Your `.env.local` file has:
+Your `.env.local` file should have:
 ```
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDpPvnqren6n2sWdUgbSZyXG6AR8hK3EEI
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=plastic-detection-16524.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_DATABASE_URL=https://plastic-detection-16524-default-rtdb.firebaseio.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=plastic-detection-16524
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=plastic-detection-16524.firebasestorage.app
-NEXT_PUBLIC_FIREBASE_APP_ID=1:295905497466:web:db8740568e4ee6459e46c3
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_DATABASE_URL=https://your-project-id-default-rtdb.firebaseio.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id_here
 ```
 
-This configuration looks correct. The issue is just that authentication needs to be enabled in the Firebase Console.
+Replace all placeholder values with your actual Firebase project credentials from the Firebase Console.
 
 ## Quick Fix Summary
 

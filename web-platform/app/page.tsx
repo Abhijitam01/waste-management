@@ -1,10 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Waves, MapPin, TrendingUp, Users, ArrowRight } from 'lucide-react';
+import { Waves, MapPin, TrendingUp, Users, ArrowRight, Camera } from 'lucide-react';
 import Link from 'next/link';
+import WasteDetectionModal from '@/components/WasteDetectionModal';
 
 export default function Home() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -34,14 +37,23 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <motion.button
+                onClick={() => setIsModalOpen(true)}
+                className="group px-8 py-4 bg-primary rounded-lg font-semibold text-primary-foreground flex items-center gap-2 hover:opacity-90 transition-all"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Camera className="w-5 h-5" />
+                Detect Waste Now
+              </motion.button>
+
               <Link href="/dashboard">
                 <motion.button
-                  className="group px-8 py-4 bg-primary rounded-lg font-semibold text-primary-foreground flex items-center gap-2 hover:opacity-90 transition-all"
+                  className="px-8 py-4 bg-background border-2 border-primary rounded-lg font-semibold text-foreground hover:bg-accent transition-all"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   View Dashboard
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </motion.button>
               </Link>
 
@@ -138,6 +150,16 @@ export default function Home() {
           </Link>
         </motion.div>
       </section>
+
+      {/* Waste Detection Modal */}
+      <WasteDetectionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => {
+          // Optionally redirect or show success message
+          setTimeout(() => setIsModalOpen(false), 2000);
+        }}
+      />
     </div>
   );
 }

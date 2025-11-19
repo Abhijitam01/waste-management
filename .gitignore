@@ -75,3 +75,10 @@ training_log.txt
 # PROJECT_REPORT_CONTEXT.md
 # QUICKSTART.md
 # UI_FIXES_SUMMARY.md
+
+# Files with potential secrets (review before committing)
+index.html
+*.key
+*.pem
+*credentials*.json
+*serviceAccount*.json

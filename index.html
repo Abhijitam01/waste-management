@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Firebase Test</title>
 </head>
 <body>
     <script type="module">
@@ -14,15 +14,17 @@
         import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
       
         // Your web app's Firebase configuration
+        // IMPORTANT: Replace these with your actual Firebase credentials from environment variables
+        // Never commit real credentials to version control!
         const firebaseConfig = {
-          apiKey: "AIzaSyDpPvnqren6n2sWdUgbSZyXG6AR8hK3EEI",
-          authDomain: "plastic-detection-16524.firebaseapp.com",
-          databaseURL: "https://plastic-detection-16524-default-rtdb.firebaseio.com",
-          projectId: "plastic-detection-16524",
-          storageBucket: "plastic-detection-16524.firebasestorage.app",
-          messagingSenderId: "295905497466",
-          appId: "1:295905497466:web:db8740568e4ee6459e46c3",
-          measurementId: "G-DFNX51ZJX6"
+          apiKey: process.env.FIREBASE_API_KEY || "YOUR_API_KEY_HERE",
+          authDomain: process.env.FIREBASE_AUTH_DOMAIN || "YOUR_PROJECT_ID.firebaseapp.com",
+          databaseURL: process.env.FIREBASE_DATABASE_URL || "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+          projectId: process.env.FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
+          storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "YOUR_PROJECT_ID.firebasestorage.app",
+          messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "YOUR_SENDER_ID",
+          appId: process.env.FIREBASE_APP_ID || "YOUR_APP_ID",
+          measurementId: process.env.FIREBASE_MEASUREMENT_ID || "YOUR_MEASUREMENT_ID"
         };
       
         // Initialize Firebase
@@ -34,16 +36,18 @@
         const db = getDatabase(app);
       
         // Function to authenticate with email and password
-        async function authenticateUser() {
+        // IMPORTANT: Never hardcode credentials! Get these from user input or environment variables
+        async function authenticateUser(email, password) {
           try {
-            const email = "test1@test.com"; // Replace with actual email
-            const password = "qwerty"; // Replace with actual password
+            if (!email || !password) {
+              throw new Error("Email and password are required");
+            }
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             console.log("User authenticated:", userCredential.user);
-            return userCredential.user; // Return user data
+            return userCredential.user;
           } catch (error) {
             console.error("Authentication failed:", error);
-            alert("Authentication failed!");
+            alert("Authentication failed: " + error.message);
             return null;
           }
         }
@@ -51,28 +55,38 @@
         // Function to get coordinates from Firebase Database
         async function getCoordinates() {
           try {
-            const user = await authenticateUser();
+            // Get credentials from user input (never hardcode!)
+            const email = prompt("Enter your email:");
+            const password = prompt("Enter your password:");
+            
+            if (!email || !password) {
+              alert("Email and password are required");
+              return;
+            }
+            
+            const user = await authenticateUser(email, password);
             if (user) {
               const userId = user.uid;
-              const coordinatesRef = ref(db, 'coordinates/' + userId); // Assuming 'coordinates' are stored under the user's UID
+              const coordinatesRef = ref(db, 'coordinates/' + userId);
               const snapshot = await get(coordinatesRef);
               if (snapshot.exists()) {
                 const data = snapshot.val();
                 console.log("Coordinates:", data);
-                // Assuming data contains 'latitude' and 'longitude'
                 const latitude = data.latitude;
                 const longitude = data.longitude;
                 alert(`Latitude: ${latitude}, Longitude: ${longitude}`);
               } else {
                 console.log("No coordinates data found");
+                alert("No coordinates data found for this user");
               }
             }
           } catch (error) {
             console.error("Error getting coordinates:", error);
+            alert("Error: " + error.message);
           }
         }
       
-        // Call the getCoordinates function when needed, for example on a button click
+        // Call the getCoordinates function when needed
         document.getElementById("getCoordinatesBtn").addEventListener("click", getCoordinates);
       </script>
       
