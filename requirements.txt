@@ -1,0 +1,21 @@
+# Flask Web Framework
+flask>=2.3.0,<3.0.0
+flask-cors>=4.0.0
+
+# TensorFlow for ML Model
+tensorflow>=2.13.0,<3.0.0
+numpy>=1.24.0,<2.0.0
+
+# Firebase Integration
+pyrebase4>=4.7.0
+
+# HTTP Requests
+requests>=2.31.0
+
+# Raspberry Pi Camera (optional, only for Pi devices)
+# picamera>=1.13; sys_platform == "linux" and platform_machine == "armv7l"
+# picamera>=1.13; sys_platform == "linux" and platform_machine == "aarch64"
+
+# Environment Variables (optional, for .env file support)
+python-dotenv>=1.0.0
+
