@@ -8,12 +8,13 @@ import { auth, database } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MapPin, TrendingUp, Package, Wind, Search, 
-  Clock, CheckCircle2, SlidersHorizontal, Filter
+  Clock, CheckCircle2, SlidersHorizontal, Filter, Camera
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { calculateDistance } from '@/lib/utils';
 import Sidebar from '@/components/Sidebar';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import WasteDetectionModal from '@/components/WasteDetectionModal';
 import { WasteReport, FilterType, SortType, FirebaseUser } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
@@ -32,6 +33,7 @@ export default function DashboardPage() {
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [sortType, setSortType] = useState<SortType>('distance');
   const [showFilters, setShowFilters] = useState(false);
+  const [showDetectionModal, setShowDetectionModal] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -196,6 +198,15 @@ export default function DashboardPage() {
                 </BreadcrumbList>
               </Breadcrumb>
             </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowDetectionModal(true)}
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg"
+            >
+              <Camera className="w-5 h-5" />
+              Detect Waste Now
+            </motion.button>
           </div>
 
           <Separator />
@@ -437,6 +448,17 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Waste Detection Modal */}
+      <WasteDetectionModal
+        isOpen={showDetectionModal}
+        onClose={() => setShowDetectionModal(false)}
+        onSuccess={() => {
+          // Refresh reports after successful detection
+          setShowDetectionModal(false);
+          // The reports will automatically update via Firebase listener
+        }}
+      />
     </div>
   );
 }

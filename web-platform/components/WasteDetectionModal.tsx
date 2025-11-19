@@ -22,6 +22,7 @@ export default function WasteDetectionModal({ isOpen, onClose, onSuccess }: Wast
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string>('');
   const [result, setResult] = useState<Record<string, number> | null>(null);
+  const [showResults, setShowResults] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,6 +99,11 @@ export default function WasteDetectionModal({ isOpen, onClose, onSuccess }: Wast
           const data: ClassificationResponse = await response.json();
           
           if (data.success && data.predictions) {
+            // Show results immediately
+            setResult(data.predictions);
+            setShowResults(true);
+            
+            // Upload image and save to database
             const imageRef = storageRef(storage, `waste_images/${Date.now()}_${image.name}`);
             await uploadBytes(imageRef, image);
             const imageUrl = await getDownloadURL(imageRef);
@@ -117,7 +123,6 @@ export default function WasteDetectionModal({ isOpen, onClose, onSuccess }: Wast
             };
 
             await push(dbRef(database, 'waste_reports'), reportData);
-            setResult(data.predictions);
             setSuccess(true);
             
             // Call onSuccess callback after a delay
@@ -149,6 +154,7 @@ export default function WasteDetectionModal({ isOpen, onClose, onSuccess }: Wast
     setResult(null);
     setLocation(null);
     setError('');
+    setShowResults(false);
   };
 
   const handleClose = () => {
@@ -256,6 +262,31 @@ export default function WasteDetectionModal({ isOpen, onClose, onSuccess }: Wast
                   </div>
 
                   <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Detection Results - Show while processing or after detection */}
+                    {showResults && result && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-4 bg-muted border border-border rounded-lg"
+                      >
+                        <h3 className="text-sm font-semibold text-card-foreground mb-3">AI Classification Results:</h3>
+                        <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                          {Object.entries(result)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([type, confidence], index) => (
+                              <div
+                                key={type}
+                                className="flex items-center justify-between p-2 bg-background rounded border border-border"
+                              >
+                                <span className="text-card-foreground capitalize font-medium text-sm">{type}</span>
+                                <span className="text-card-foreground font-semibold text-sm">
+                                  (score = {confidence.toFixed(5)})
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </motion.div>
+                    )}
                     {/* Image Upload */}
                     <div>
                       <label className="block text-sm font-medium text-card-foreground mb-3">
